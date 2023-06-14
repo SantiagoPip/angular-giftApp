@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-
+import {HttpClient,HttpParams} from '@angular/common/http'
+import { Gif, SearchResponse } from '../interfaces/gifs.interfaces';
 
 const GIPHY_API_KEY = 'l1Yt7V3tkhAXYKeyWsoIu8FqXPObZhff'
 
@@ -8,10 +9,22 @@ const GIPHY_API_KEY = 'l1Yt7V3tkhAXYKeyWsoIu8FqXPObZhff'
 export class GifsService {
 
   private _tagsHistory:string[] =[]
-
+  public gifList:Gif[] =[]
   private apiKey:string = 'l1Yt7V3tkhAXYKeyWsoIu8FqXPObZhff'
-  constructor() { }
-
+  private serviceUrl:string = 'https://api.giphy.com/v1/gifs'
+  constructor( private http: HttpClient) {
+    this.loadLocalStorage();
+    console.log('Gifs Service Ready')
+  }
+  private saveLocalStorage():void{
+    localStorage.setItem('history',JSON.stringify(this._tagsHistory))
+  }
+  private loadLocalStorage():void{
+    if(!localStorage.getItem('history'))return
+    this._tagsHistory = JSON.parse(localStorage.getItem('history')!)//Not null ooperator
+    if(this._tagsHistory.length===0)return
+    this.searchTag(this._tagsHistory[0])
+  }
   get tagsHistory(){
       return [...this._tagsHistory]
   }
@@ -22,14 +35,28 @@ export class GifsService {
     }
     this._tagsHistory.unshift(tag)
     this._tagsHistory = this.tagsHistory.splice(0,10)
+    this.saveLocalStorage();
+
   }
 
-  searchTag(tag:string):void{
-    if(tag.length === 0){
-      return
-    }
+  async searchTag(tag:string):Promise<void>{
+    if(tag.length === 0) return
     this.organizeHistory(tag)
-    console.log(this.tagsHistory)
+    const params = new HttpParams()
+      .set('api_key', this.apiKey)
+      .set('limit','10')
+      .set('q',tag)
+
+    this.http.get<SearchResponse>(`${this.serviceUrl}/search`,{params})//Observable
+        .subscribe((resp)=>{
+            this.gifList = resp.data;
+            console.log(resp.data)
+        })
+
+    // fetch('https://api.giphy.com/v1/gifs/search?api_key=l1Yt7V3tkhAXYKeyWsoIu8FqXPObZhff')
+    //   .then(resp =>resp.json())
+    //   .then(data => console.log(data))
+
 
   }
 
