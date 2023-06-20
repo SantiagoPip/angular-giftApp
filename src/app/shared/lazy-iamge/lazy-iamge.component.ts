@@ -7,7 +7,7 @@ import { Component, Input, OnInit } from '@angular/core';
 })
 export class LazyIamgeComponent implements OnInit{
 
-  @Input()
+ @Input()
  public url!:string;
  @Input()
  public alt:string=''
